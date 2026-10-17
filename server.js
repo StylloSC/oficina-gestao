@@ -8,13 +8,11 @@ app.use(express.json({ limit: '20mb' }));
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Conexão com o Banco PostgreSQL do Render
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Inicializar tabelas no Banco de Dados
 async function initDb() {
     try {
         await pool.query(`
@@ -38,7 +36,6 @@ async function initDb() {
             );
         `);
         
-        // Criar usuário admin padrão se não existir
         const adminCheck = await pool.query("SELECT * FROM usuarios WHERE user_name = 'styllo'");
         if (adminCheck.rows.length === 0) {
             await pool.query("INSERT INTO usuarios (user_name, senha, tipo) VALUES ('styllo', 'SSContabilidade1*', 'admin')");
@@ -50,7 +47,6 @@ async function initDb() {
 }
 initDb();
 
-// 1. Rota de Login
 app.post('/api/login', async (req, res) => {
     const { user, senha } = req.body;
     const u = user ? user.trim().toLowerCase() : '';
@@ -66,7 +62,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 2. Listar dados para o Admin (Master)
 app.get('/api/admin/dados', async (req, res) => {
     try {
         const usersRes = await pool.query("SELECT user_name, senha, tipo FROM usuarios");
@@ -87,7 +82,6 @@ app.get('/api/admin/dados', async (req, res) => {
     }
 });
 
-// 3. Cadastrar ou Editar Oficina (Admin)
 app.post('/api/admin/oficina', async (req, res) => {
     const { user, senha, razao, cnpj, endereco, contato } = req.body;
     const u = user.trim().toLowerCase();
@@ -106,7 +100,6 @@ app.post('/api/admin/oficina', async (req, res) => {
     }
 });
 
-// 4. Excluir Oficina (Admin)
 app.delete('/api/admin/oficina/:user', async (req, res) => {
     const { user } = req.params;
     try {
@@ -119,7 +112,6 @@ app.delete('/api/admin/oficina/:user', async (req, res) => {
     }
 });
 
-// 5. Salvar Ordem de Serviço
 app.post('/api/os', async (req, res) => {
     const os = req.body;
     try {
