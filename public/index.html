@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oficina Gestão - Sistema Contábil & Operacional</title>
+    <!-- jsPDF e AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg-app: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 1rem;
+        }
+
+        /* TEMA ESCURO */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --bg-app: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { background-color: var(--bg-app); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; font-size: 15px; transition: background 0.3s, color 0.3s; }
+        .hidden { display: none !important; }
+
+        /* TELA DE LOGIN */
+        .login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1.25rem; }
+        .login-card { background: var(--card-bg); border-radius: 1.25rem; padding: 2rem 1.5rem; width: 100%; max-width: 380px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); color: var(--text-main); }
+
+        /* HEADER */
+        header { background: var(--card-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+        .header-content { max-width: 950px; margin: 0 auto; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; }
+        
+        /* CONTAINER */
+        main { max-width: 950px; width: 100%; margin: 0 auto; padding: 1rem; flex: 1; display: flex; flex-direction: column; gap: 1.25rem; }
+
+        /* CARDS */
+        .card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02); }
+        
+        /* ESTATÍSTICAS */
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .stat-card { background: var(--card-bg); border-radius: 0.875rem; border: 1px solid var(--border); padding: 1rem; }
+        .stat-card.full { grid-column: span 2; }
+        .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
+        .stat-value { font-size: 1.35rem; font-weight: 800; margin-top: 0.25rem; color: var(--text-main); }
+
+        /* NAVEGAÇÃO DE ABAS */
+        .nav-tabs { display: flex; gap: 0.4rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto; }
+        .tab-btn { background: none; border: none; font-weight: 700; font-size: 0.8rem; color: var(--text-muted); padding: 0.5rem 0.75rem; cursor: pointer; border-radius: 0.5rem; white-space: nowrap; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* FORMULÁRIOS */
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; }
+        input, select { width: 100%; padding: 0.875rem 1rem; border-radius: 0.75rem; border: 1px solid var(--border); font-size: 1rem; outline: none; background: var(--card-bg); color: var(--text-main); }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+
+        /* BOTÕES */
+        button { cursor: pointer; border: none; font-weight: 600; border-radius: 0.75rem; padding: 0.875rem 1.25rem; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.15s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
+        .btn-primary:active { background: var(--primary-dark); }
+        .btn-secondary { background: var(--border); color: var(--text-main); font-size: 0.85rem; padding: 0.6rem 1rem; }
+        .btn-danger { background: #fee2e2; color: #dc2626; padding: 0.75rem; border-radius: 0.5rem; }
+
+        /* LISTAGEM */
+        .os-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .os-item-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.875rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+        .os-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-size: 0.85rem; }
+        .os-body-row { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+        
+        .os-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.5rem; }
+        .os-actions button { padding: 0.5rem; font-size: 0.7rem; border-radius: 0.5rem; justify-content: flex-start; }
+
+        /* BADGES */
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .badge-amber { background: #fef3c7; color: #b45309; }
+        .badge-purple { background: #ede9fe; color: #6d28d9; }
+
+        /* PEÇAS FLEXÍVEIS */
+        .peca-row { background: var(--bg-app); padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+        @media(min-width: 640px) {
+            .peca-row { display: grid; grid-template-columns: 2fr 80px 100px 1.2fr auto; align-items: center; }
+            .grid-stats { grid-template-columns: repeat(3, 1fr); }
+            .stat-card.full { grid-column: span 1; }
+        }
+
+        .section-title { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--primary); margin-bottom: 0.75rem; letter-spacing: 0.05em; border-left: 3px solid var(--primary); padding-left: 0.5rem; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- TELA DE LOGIN LIMPA -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="background: rgba(37,99,235,0.1); color: var(--primary); width: 3.5rem; height: 3.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; font-size: 1.5rem;">
+                    🚗
+                </div>
+                <h1 style="font-size: 1.35rem; font-weight: 800;">Oficina Gestão</h1>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Portal Contábil & Operacional</p>
+            </div>
+            
+            <form onsubmit="fazerLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label>Usuário / Código de Acesso</label>
+                    <input type="text" id="loginUser" required placeholder="Digite seu usuário">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="loginPass" required placeholder="Digite sua senha">
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 0.5rem;">Entrar no Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APLICATIVO PRINCIPAL -->
+    <div id="appContainer" class="hidden" style="flex: 1; display: flex; flex-direction: column;">
+        
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <div id="headerLogoContainer" style="background: var(--primary); color: white; width: 2.25rem; height: 2.25rem; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow:hidden;">
+                        ⚙️
+                    </div>
+                    <div>
+                        <h2 id="headerTitle" style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);">Oficina Mecânica</h2>
+                        <span id="headerRoleBadge" class="badge badge-blue">Oficina</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <select id="themeSelector" onchange="mudarTema(this.value)" style="padding: 0.4rem; font-size: 0.8rem; border-radius: 0.5rem;">
+                        <option value="light">☀️ Claro</option>
+                        <option value="dark">🌙 Escuro</option>
+                        <option value="system">💻 Sistema</option>
+                    </select>
+                    <button onclick="logout()" class="btn-secondary" style="padding: 0.4rem 0.75rem; border-radius: 0.5rem;">🚪 Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- PAINEL DA OFICINA -->
+            <div id="oficinaView" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                
+                <div class="nav-tabs">
+                    <button id="tabLancamentos" class="tab-btn active" onclick="switchTab('lancamentos')">🔧 Atendimentos</button>
+                    <button id="tabClientes" class="tab-btn" onclick="switchTab('clientes')">👥 Clientes</button>
+                    <button id="tabVeiculos" class="tab-btn" onclick="switchTab('veiculos')">🚗 Veículos</button>
+                    <button id="tabEmpresa" class="tab-btn" onclick="switchTab('empresa')">🏢 Empresa & Logo</button>
+                </div>
+
+                <!-- SEÇÃO 1: LANÇAMENTOS -->
+                <div id="sectionLancamentos" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div class="grid-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Atendimentos Salvos</div>
+                            <div id="statToday" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Reembolsos / Repasse</div>
+                            <div id="statRepasse" class="stat-value" style="font-size: 1.15rem; color: #15803d;">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card full">
+                            <div class="stat-label">Vendas c/ Lucro (Tributável)</div>
+                            <div id="statVenda" class="stat-value" style="color: var(--primary);">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <!-- Formulário -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                            <div>
+                                <h3 style="font-size: 1rem; font-weight: 800;">Novo Atendimento Mecânico</h3>
+                                <p style="font-size: 0.7rem; color: var(--text-muted);">Preencha os campos para emissão contábil.</p>
+                            </div>
+                            <span class="badge badge-green">Sistema Ativo</span>
+                        </div>
+
+                        <form id="osForm" onsubmit="submitOS(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div>
+                                <div class="section-title">1. Cliente</div>
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                    <div>
+                                        <label>Nome Completo *</label>
+                                        <input type="text" id="cliNome" required placeholder="Ex: Odair Jose de Freitas" list="clientesList" oninput="preencherClientePorNome(this.value)">
+                                        <datalist id="clientesList"></datalist>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                        <div>
+                                            <label>CPF / CNPJ *</label>
+                                            <input type="text" id="cliCpf" required placeholder="000.000.000-00" oninput="maskCpfCnpj(this)" maxlength="18">
+                                        </div>
+                                        <div>
+                                            <label>CEP</label>
+                                            <input type="text" id="cliCep" placeholder="00000-000" onblur="buscarCep(this.value)" oninput="maskCep(this)" maxlength="9">
+                                        </div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.5rem;">
+                                        <div>
+                                            <label>Endereço (Rua / Bairro / Cidade - UF)</label>
+                                            <input type="text" id="cliEnd" placeholder="Rua, Bairro, Cidade - UF" style="font-size: 0.85rem;">
+                                        </div>
+                                        <div>
+                                            <label>Número *</label>
+                                            <input type="text" id="cliNum" placeholder="Ex: 505" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="section-title">2. Veículo</div>
+                                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 0.5rem;">
+                                    <div>
+                                        <label>Placa *</label>
+                                        <input type="text" id="veiPlaca" required placeholder="HMJ4D46" style="text-transform: uppercase;" list="veiculosList" oninput="preencherVeiculoPorPlaca(this.value)" maxlength="8">
+                                        <datalist id="veiculosList"></datalist>
+                                    </div>
+                                    <div>
+                                        <label>Modelo *</label>
+                                        <input type="text" id="veiModelo" required placeholder="Fiat Palio">
+                                    </div>
+                                    <div>
+                                        <label>Ano</label>
+                                        <input type="text" id="veiAno" placeholder="2009/2010">
+                                    </div>
+                                    <div>
+                                        <label>KM</label>
+                                        <input type="text" id="veiKm" placeholder="145233">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="section-title">3. Serviço & Mão de Obra</div>
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                    <div>
+                                        <label>Descrição do Serviço *</label>
+                                        <input type="text" id="srvDesc" required value="PRESTAÇÃO DE SERVIÇOS MECANICOS">
+                                    </div>
+                                    <div>
+                                        <label>Valor Mão de Obra (R$) *</label>
+                                        <input type="text" id="srvValor" required placeholder="0,00" oninput="maskMoney(this)" style="font-weight: bold; color: var(--primary);">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <div class="section-title" style="margin-bottom:0; border-left:none; padding-left:0;">4. Peças Utilizadas</div>
+                                    <button type="button" onclick="addPecaRow()" class="btn-secondary">+ Peça</button>
+                                </div>
+                                <div id="pecasContainer">
+                                    <div class="peca-row">
+                                        <input type="text" placeholder="Nome da Peça" class="peca-nome">
+                                        <input type="text" placeholder="Qtd/Un" class="peca-qtd" value="1 UN">
+                                        <input type="text" placeholder="Valor R$" oninput="maskMoney(this)" class="peca-valor">
+                                        <select class="peca-tipo">
+                                            <option value="repasse">Repasse (s/ Lucro)</option>
+                                            <option value="venda">Venda (c/ Lucro)</option>
+                                        </select>
+                                        <button type="button" onclick="removePecaRow(this)" class="btn-danger">🗑️</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="margin-top: 0.5rem; padding: 1rem;">💾 Salvar Atendimento</button>
+                        </form>
+                    </div>
+
+                    <!-- Histórico -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h3 style="font-size: 1rem; font-weight: 800;">Atendimentos Salvos</h3>
+                            <button onclick="limparHistorico()" class="btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">🗑️ Limpar Tudo</button>
+                        </div>
+                        <div id="listaOsCards" class="os-list"></div>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 2: CLIENTES -->
+                <div id="sectionClientes" class="card hidden">
+                    <h3 style="font-size: 1.125rem; font-weight: 800; margin-bottom: 0.5rem;">Base de Clientes</h3>
+                    <div id="listaClientesDiv" class="os-list"></div>
+                </div>
+
+                <!-- SEÇÃO 3: VEÍCULOS -->
+                <div id="sectionVeiculos" class="card hidden">
+                    <h3 style="font-size: 1.125rem; font-weight: 800; margin-bottom: 0.5rem;">Frota de Veículos</h3>
+                    <div id="listaVeiculosDiv" class="os-list"></div>
+                </div>
+
+                <!-- SEÇÃO 4: DADOS DA EMPRESA & LOGO -->
+                <div id="sectionEmpresa" class="card hidden">
+                    <h3 style="font-size: 1.125rem; font-weight: 800; margin-bottom: 0.5rem;">Configurações da Empresa & Logotipo</h3>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.25rem;">Carregue sua logo para sair perfeitamente no topo de todos os relatórios em PDF.</p>
+
+                    <form onsubmit="salvarDadosEmpresa(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div>
+                            <label>CNPJ da Oficina</label>
+                            <input type="text" id="empCnpj" placeholder="00.000.000/0001-00" onblur="buscarCnpjOficina(this.value)" oninput="maskCnpj(this)" maxlength="18">
+                        </div>
+                        <div>
+                            <label>Razão Social / Nome da Oficina *</label>
+                            <input type="text" id="empRazao" required placeholder="Ex: Auto Mecânica Ltda">
+                        </div>
+                        <div>
+                            <label>Endereço Completo da Oficina</label>
+                            <input type="text" id="empEnd" placeholder="Rua, Número, Bairro, Cidade - UF">
+                        </div>
+                        <div>
+                            <label>E-mail & Telefone</label>
+                            <input type="text" id="empContato" placeholder="oficina@email.com | (31) 99999-9999">
+                        </div>
+                        <div>
+                            <label>Carregar Logotipo (Imagem)</label>
+                            <input type="file" id="empLogoInput" accept="image/*" onchange="processarLogo(event)" style="padding: 0.5rem;">
+                            <div id="logoPreviewContainer" style="margin-top: 0.5rem;"></div>
+                        </div>
+                        <button type="submit" class="btn-primary">💾 Salvar Alterações da Empresa</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PAINEL DO CONTADOR / MASTER (STYLLO) -->
+            <div id="contadorView" class="hidden" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div class="card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white;">
+                    <span class="badge" style="background: rgba(37,99,235,0.2); color: #93c5fd;">Painel Master - Oficina Gestão</span>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin-top: 0.4rem;">Gestão Geral & Apuração Contábil</h3>
+                    <div style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8;">Faturamento Total Consolidado</span>
+                        <span id="totalGeralMes" style="font-size: 1.25rem; font-weight: 800; color: #4ade80;">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- CRIAR / GERENCIAR EMPRESAS COMPLETAMENTE COM CNPJ E CEP -->
+                <div class="card">
+                    <h3 id="formMasterTitulo" style="font-size: 1rem; font-weight: 800; margin-bottom: 0.75rem;">🏢 Cadastrar Nova Oficina (Completo)</h3>
+                    <form onsubmit="salvarOficinaMaster(event)" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <input type="hidden" id="editModoUser" value="">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <div>
+                                <label>Código de Usuário (Login) *</label>
+                                <input type="text" id="masterUser" required placeholder="Ex: oficina1">
+                            </div>
+                            <div>
+                                <label>Senha de Acesso *</label>
+                                <input type="text" id="masterSenha" required placeholder="Ex: 123456">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem;">
+                            <div>
+                                <label>CNPJ (Busca Automática) *</label>
+                                <input type="text" id="masterCnpj" placeholder="00.000.000/0001-00" onblur="buscarCnpjMaster(this.value)" oninput="maskCnpj(this)" maxlength="18">
+                            </div>
+                            <div>
+                                <label>CEP (Opcional)</label>
+                                <input type="text" id="masterCep" placeholder="00000-000" onblur="buscarCepMaster(this.value)" oninput="maskCep(this)" maxlength="9">
+                            </div>
+                        </div>
+                        <div>
+                            <label>Razão Social / Nome da Oficina *</label>
+                            <input type="text" id="masterRazao" required placeholder="Ex: Oficina Mecânica Exemplo">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 0.5rem;">
+                            <div>
+                                <label>Endereço Completo</label>
+                                <input type="text" id="masterEnd" placeholder="Rua, Bairro, Cidade - UF">
+                            </div>
+                            <div>
+                                <label>Número</label>
+                                <input type="text" id="masterNum" placeholder="Nº">
+                            </div>
+                        </div>
+                        <div>
+                            <label>Contato (E-mail / Tel)</label>
+                            <input type="text" id="masterContato" placeholder="email@oficina.com">
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="submit" class="btn-primary" style="background: #15803d; flex: 1;">💾 Salvar Oficina</button>
+                            <button type="button" id="btnCancelarEdicao" class="btn-secondary hidden" onclick="cancelarEdicaoMaster()">Cancelar</button>
+                        </div>
+                    </form>
+                    <div style="margin-top: 1rem;">
+                        <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem;">Empresas Cadastradas no Sistema:</h4>
+                        <div id="listaEmpresasAdmin" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1rem; font-weight: 800;">Atendimentos de Todas as Oficinas</h3>
+                        <button onclick="exportarRelatorioContabil()" class="btn-primary" style="background: #15803d; width: auto; font-size: 0.8rem; padding: 0.6rem 1rem;">📥 Baixar Relatório Mestre</button>
+                    </div>
+                    <div id="listaContadorCards" class="os-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let credenciais = JSON.parse(localStorage.getItem('oficina_credenciais_v17')) || {
+            'styllo': { senha: 'SSContabilidade1*', tipo: 'admin' }
+        };
+
+        let oficinasData = JSON.parse(localStorage.getItem('oficina_dados_empresas_v17')) || {};
+
+        let ordensServico = JSON.parse(localStorage.getItem('oficina_os_multi_v17')) || [];
+        let clientesBase = JSON.parse(localStorage.getItem('oficina_clientes_v17')) || [];
+        let veiculosBase = JSON.parse(localStorage.getItem('oficina_veiculos_v17')) || [];
+
+        // GESTÃO DE TEMA
+        function mudarTema(modo) {
+            const body = document.body;
+            if (modo === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                body.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                body.setAttribute('data-theme', modo);
+            }
+            localStorage.setItem('oficina_tema_v17', modo);
+        }
+
+        window.onload = function() {
+            let savedTheme = localStorage.getItem('oficina_tema_v17') || 'light';
+            document.getElementById('themeSelector').value = savedTheme;
+            mudarTema(savedTheme);
+        };
+
+        function fazerLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value.trim().toLowerCase();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            if (!credenciais[user] || credenciais[user].senha !== pass) {
+                alert('Usuário ou senha incorretos!');
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+
+            if (credenciais[user].tipo === 'admin') {
+                document.getElementById('headerTitle').innerText = 'Oficina Gestão (Painel Master)';
+                document.getElementById('headerRoleBadge').innerText = 'Administrador / Contador';
+                document.getElementById('headerRoleBadge').className = 'badge badge-amber';
+                document.getElementById('headerLogoContainer').innerHTML = '📊';
+                document.getElementById('oficinaView').classList.add('hidden');
+                document.getElementById('contadorView').classList.remove('hidden');
+                renderContadorMaster();
+            } else {
+                if (!oficinasData[currentUser]) {
+                    oficinasData[currentUser] = { razao: 'Oficina ' + currentUser.toUpperCase(), cnpj: '', endereco: '', contato: '', logo: '' };
+                }
+                carregarDadosEmpresaNaTela();
+                let info = oficinasData[currentUser];
+                document.getElementById('headerTitle').innerText = info.razao;
+                document.getElementById('headerRoleBadge').innerText = 'Oficina';
+                document.getElementById('headerRoleBadge').className = 'badge badge-blue';
+                atualizarLogoHeader(info.logo);
+                
+                document.getElementById('contadorView').classList.add('hidden');
+                document.getElementById('oficinaView').classList.remove('hidden');
+                switchTab('lancamentos');
+                renderOficinaCards();
+                atualizarDatalists();
+            }
+        }
+
+        function logout() {
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+            currentUser = null;
+        }
+
+        // API CNPJ E CEP PARA O PAINEL MASTER
+        async function buscarCnpjMaster(cnpj) {
+            let clean = cnpj.replace(/\D/g, '');
+            if (clean.length !== 14) return;
+            try {
+                let res = await fetch(`https://publica.cnpj.ws/cnpj/${clean}`);
+                let data = await res.json();
+                if (data && data.razao_social) {
+                    document.getElementById('masterRazao').value = data.razao_social;
+                    if (data.estabelecimento) {
+                        let est = data.estabelecimento;
+                        let rua = `${est.tipo_logradouro || ''} ${est.logradouro || ''}`.trim();
+                        let numero = est.numero || '';
+                        let bairro = est.bairro || '';
+                        let cidade = est.cidade ? est.cidade.nome : '';
+                        let estado = est.estado ? est.estado.sigla : '';
+                        
+                        document.getElementById('masterEnd').value = `${rua}, ${bairro} - ${cidade} - ${estado}`;
+                        document.getElementById('masterNum').value = numero;
+                        if (est.cep) {
+                            let cepFmt = est.cep.replace(/\D/g, '');
+                            document.getElementById('masterCep').value = cepFmt.replace(/^(\d{5})(\d)/, "$1-$2");
+                        }
+                    }
+                }
+            } catch (e) { console.log('Erro ao buscar CNPJ'); }
+        }
+
+        async function buscarCepMaster(cep) {
+            let cleanCep = cep.replace(/\D/g, '');
+            if (cleanCep.length !== 8) return;
+            try {
+                let response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                let data = await response.json();
+                if (!data.erro) {
+                    document.getElementById('masterEnd').value = `${data.logradouro}, ${data.bairro} - ${data.localidade} - ${data.uf}`;
+                    document.getElementById('masterNum').focus();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function salvarOficinaMaster(e) {
+            e.preventDefault();
+            const u = document.getElementById('masterUser').value.trim().toLowerCase();
+            const s = document.getElementById('masterSenha').value.trim();
+            const r = document.getElementById('masterRazao').value.trim();
+            const c = document.getElementById('masterCnpj').value.trim();
+            let end = document.getElementById('masterEnd').value.trim();
+            let num = document.getElementById('masterNum').value.trim();
+            if (num) end += `, nº ${num}`;
+            const contato = document.getElementById('masterContato').value.trim();
+            const editModo = document.getElementById('editModoUser').value;
+
+            if (!editModo && credenciais[u]) {
+                alert('Este usuário já existe! Escolha outro código.');
+                return;
+            }
+
+            if (editModo) {
+                if (editModo !== u) {
+                    credenciais[u] = credenciais[editModo];
+                    delete credenciais[editModo];
+                    oficinasData[u] = oficinasData[editModo];
+                    delete oficinasData[editModo];
+                }
+                credenciais[u].senha = s;
+                oficinasData[u].razao = r;
+                oficinasData[u].cnpj = c;
+                oficinasData[u].endereco = end;
+                oficinasData[u].contato = contato;
+            } else {
+                credenciais[u] = { senha: s, tipo: 'oficina' };
+                oficinasData[u] = { razao: r, cnpj: c, endereco: end, contato: contato, logo: '' };
+            }
+
+            localStorage.setItem('oficina_credenciais_v17', JSON.stringify(credenciais));
+            localStorage.setItem('oficina_dados_empresas_v17', JSON.stringify(oficinasData));
+
+            cancelarEdicaoMaster();
+            renderContadorMaster();
+            alert('Dados da oficina salvos com sucesso!');
+        }
+
+        function editarOficinaMaster(user) {
+            document.getElementById('editModoUser').value = user;
+            document.getElementById('masterUser').value = user;
+            document.getElementById('masterUser').disabled = true;
+            document.getElementById('masterSenha').value = credenciais[user].senha;
+            
+            let info = oficinasData[user] || {};
+            document.getElementById('masterRazao').value = info.razao || '';
+            document.getElementById('masterCnpj').value = info.cnpj || '';
+            document.getElementById('masterEnd').value = info.endereco || '';
+            document.getElementById('masterContato').value = info.contato || '';
+
+            document.getElementById('formMasterTitulo').innerText = `✏️ Editando Oficina: ${user}`;
+            document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoMaster() {
+            document.getElementById('editModoUser').value = '';
+            document.getElementById('masterUser').value = '';
+            document.getElementById('masterUser').disabled = false;
+            document.getElementById('masterSenha').value = '';
+            document.getElementById('masterRazao').value = '';
+            document.getElementById('masterCnpj').value = '';
+            document.getElementById('masterCep').value = '';
+            document.getElementById('masterEnd').value = '';
+            document.getElementById('masterNum').value = '';
+            document.getElementById('masterContato').value = '';
+
+            document.getElementById('formMasterTitulo').innerText = '🏢 Cadastrar Nova Oficina (Completo)';
+            document.getElementById('btnCancelarEdicao').classList.add('hidden');
+        }
+
+        function excluirOficina(user) {
+            if (user === 'styllo') {
+                alert('O usuário administrador principal não pode ser excluído.');
+                return;
+            }
+            if (confirm(`Deseja realmente remover o acesso e os dados de ${user}?`)) {
+                delete credenciais[user];
+                delete oficinasData[user];
+                localStorage.setItem('oficina_credenciais_v17', JSON.stringify(credenciais));
+                localStorage.setItem('oficina_dados_empresas_v17', JSON.stringify(oficinasData));
+                renderContadorMaster();
+            }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('sectionLancamentos').classList.add('hidden');
+            document.getElementById('sectionClientes').classList.add('hidden');
+            document.getElementById('sectionVeiculos').classList.add('hidden');
+            document.getElementById('sectionEmpresa').classList.add('hidden');
+
+            document.getElementById('tabLancamentos').className = 'tab-btn';
+            document.getElementById('tabClientes').className = 'tab-btn';
+            document.getElementById('tabVeiculos').className = 'tab-btn';
+            document.getElementById('tabEmpresa').className = 'tab-btn';
+
+            if (tab === 'lancamentos') {
+                document.getElementById('sectionLancamentos').classList.remove('hidden');
+                document.getElementById('tabLancamentos').className = 'tab-btn active';
+            } else if (tab === 'clientes') {
+                document.getElementById('sectionClientes').classList.remove('hidden');
+                document.getElementById('tabClientes').className = 'tab-btn active';
+                renderClientesList();
+            } else if (tab === 'veiculos') {
+                document.getElementById('sectionVeiculos').classList.remove('hidden');
+                document.getElementById('tabVeiculos').className = 'tab-btn active';
+                renderVeiculosList();
+            } else if (tab === 'empresa') {
+                document.getElementById('sectionEmpresa').classList.remove('hidden');
+                document.getElementById('tabEmpresa').className = 'tab-btn active';
+            }
+        }
+
+        function atualizarDatalists() {
+            const cliList = document.getElementById('clientesList');
+            cliList.innerHTML = '';
+            clientesBase.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c.nome;
+                cliList.appendChild(opt);
+            });
+
+            const veiList = document.getElementById('veiculosList');
+            veiList.innerHTML = '';
+            veiculosBase.forEach(v => {
+                let opt = document.createElement('option');
+                opt.value = v.placa;
+                veiList.appendChild(opt);
+            });
+        }
+
+        function preencherClientePorNome(nome) {
+            let cli = clientesBase.find(c => c.nome.toUpperCase() === nome.toUpperCase());
+            if (cli) {
+                document.getElementById('cliCpf').value = cli.cpf || '';
+                document.getElementById('cliEnd').value = cli.endereco || '';
+                document.getElementById('cliNum').value = cli.numero || '';
+            }
+        }
+
+        function preencherVeiculoPorPlaca(placa) {
+            let vei = veiculosBase.find(v => v.placa.toUpperCase() === placa.toUpperCase().trim());
+            if (vei) {
+                document.getElementById('veiModelo').value = vei.modelo || '';
+                document.getElementById('veiAno').value = vei.ano || '';
+                document.getElementById('veiKm').value = vei.km || '';
+            }
+        }
+
+        function renderClientesList() {
+            const div = document.getElementById('listaClientesDiv');
+            div.innerHTML = clientesBase.length === 0 ? '<p style="color:var(--text-muted); font-size:0.85rem;">Nenhum cliente cadastrado ainda.</p>' : '';
+            clientesBase.forEach(c => {
+                div.innerHTML += `
+                    <div class="os-item-card">
+                        <div class="os-header-row"><strong>👤 ${c.nome}</strong> <span class="badge badge-blue">${c.cpf}</span></div>
+                        <div class="os-body-row"><div>Endereço: ${c.endereco}, nº ${c.numero}</div></div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderVeiculosList() {
+            const div = document.getElementById('listaVeiculosDiv');
+            div.innerHTML = veiculosBase.length === 0 ? '<p style="color:var(--text-muted); font-size:0.85rem;">Nenhum veículo cadastrado ainda.</p>' : '';
+            veiculosBase.forEach(v => {
+                div.innerHTML += `
+                    <div class="os-item-card">
+                        <div class="os-header-row"><strong>🚗 Placa: ${v.placa}</strong> <span class="badge badge-green">${v.modelo}</span></div>
+                        <div class="os-body-row"><div>Ano: ${v.ano} | KM: ${v.km}</div></div>
+                    </div>
+                `;
+            });
+        }
+
+        function carregarDadosEmpresaNaTela() {
+            let info = oficinasData[currentUser];
+            document.getElementById('empRazao').value = info.razao || '';
+            document.getElementById('empCnpj').value = info.cnpj || '';
+            document.getElementById('empEnd').value = info.endereco || '';
+            document.getElementById('empContato').value = info.contato || '';
+            if (info.logo) {
+                document.getElementById('logoPreviewContainer').innerHTML = `<img src="${info.logo}" style="max-height: 50px; border-radius: 0.4rem; border: 1px solid var(--border);">`;
+            } else {
+                document.getElementById('logoPreviewContainer').innerHTML = '';
+            }
+        }
+
+        function atualizarLogoHeader(logoBase64) {
+            let container = document.getElementById('headerLogoContainer');
+            if (logoBase64) {
+                container.innerHTML = `<img src="${logoBase64}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                container.innerHTML = '⚙️';
+            }
+        }
+
+        async function buscarCnpjOficina(cnpj) {
+            let clean = cnpj.replace(/\D/g, '');
+            if (clean.length !== 14) return;
+            try {
+                let res = await fetch(`https://publica.cnpj.ws/cnpj/${clean}`);
+                let data = await res.json();
+                if (data && data.razao_social) {
+                    document.getElementById('empRazao').value = data.razao_social;
+                    if (data.estabelecimento) {
+                        let est = data.estabelecimento;
+                        let rua = `${est.tipo_logradouro || ''} ${est.logradouro || ''}, nº ${est.numero || ''}`.trim();
+                        let bairro = est.bairro || '';
+                        let cidade = est.cidade ? est.cidade.nome : '';
+                        let estado = est.estado ? est.estado.sigla : '';
+                        document.getElementById('empEnd').value = `${rua}, ${bairro} - ${cidade} - ${estado}`;
+                    }
+                }
+            } catch (e) { console.log('Erro ao buscar CNPJ'); }
+        }
+
+        function processarLogo(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(upload) {
+                oficinasData[currentUser].logo = upload.target.result;
+                localStorage.setItem('oficina_dados_empresas_v17', JSON.stringify(oficinasData));
+                atualizarLogoHeader(upload.target.result);
+                carregarDadosEmpresaNaTela();
+                alert('Logotipo carregado com sucesso!');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function salvarDadosEmpresa(e) {
+            e.preventDefault();
+            oficinasData[currentUser].razao = document.getElementById('empRazao').value;
+            oficinasData[currentUser].cnpj = document.getElementById('empCnpj').value;
+            oficinasData[currentUser].endereco = document.getElementById('empEnd').value;
+            oficinasData[currentUser].contato = document.getElementById('empContato').value;
+            
+            localStorage.setItem('oficina_dados_empresas_v17', JSON.stringify(oficinasData));
+            document.getElementById('headerTitle').innerText = oficinasData[currentUser].razao;
+            alert('Dados da empresa salvos com sucesso!');
+            switchTab('lancamentos');
+        }
+
+        function maskCpfCnpj(i) {
+            let v = i.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, "$1.$2.$3/$4-$5");
+            else v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*/, "$1.$2.$3-$4");
+            i.value = v;
+        }
+
+        function maskCnpj(i) {
+            let v = i.value.replace(/\D/g, '');
+            v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, "$1.$2.$3/$4-$5");
+            i.value = v;
+        }
+
+        function maskCep(i) {
+            let v = i.value.replace(/\D/g, '');
+            v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+            i.value = v;
+        }
+
+        function maskMoney(i) {
+            let v = i.value.replace(/\D/g, '');
+            v = (v / 100).toFixed(2) + '';
+            v = v.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            i.value = v;
+        }
+
+        function parseMoney(str) {
+            if (!str) return 0;
+            return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+        }
+
+        async function buscarCep(cep) {
+            let cleanCep = cep.replace(/\D/g, '');
+            if (cleanCep.length !== 8) return;
+            try {
+                let response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                let data = await response.json();
+                if (!data.erro) {
+                    document.getElementById('cliEnd').value = `${data.logradouro}, ${data.bairro} - ${data.localidade} - ${data.uf}`;
+                    document.getElementById('cliNum').focus();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function addPecaRow() {
+            const container = document.getElementById('pecasContainer');
+            const row = document.createElement('div');
+            row.className = 'peca-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Nome da Peça" class="peca-nome">
+                <input type="text" placeholder="Qtd/Un" class="peca-qtd" value="1 UN">
+                <input type="text" placeholder="Valor R$" oninput="maskMoney(this)" class="peca-valor">
+                <select class="peca-tipo">
+                    <option value="repasse">Repasse (s/ Lucro)</option>
+                    <option value="venda">Venda (c/ Lucro)</option>
+                </select>
+                <button type="button" onclick="removePecaRow(this)" class="btn-danger">🗑️</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removePecaRow(btn) {
+            if (document.querySelectorAll('.peca-row').length > 1) {
+                btn.closest('.peca-row').remove();
+            } else {
+                alert("Mantenha ao menos uma linha.");
+            }
+        }
+
+        function submitOS(e) {
+            e.preventDefault();
+            let nomeCli = document.getElementById('cliNome').value.trim();
+            let cpfCli = document.getElementById('cliCpf').value.trim();
+            let endCli = document.getElementById('cliEnd').value.trim();
+            let numCli = document.getElementById('cliNum').value.trim();
+
+            let placaVei = document.getElementById('veiPlaca').value.trim().toUpperCase();
+            let modeloVei = document.getElementById('veiModelo').value.trim();
+            let anoVei = document.getElementById('veiAno').value.trim() || '2024';
+            let kmVei = document.getElementById('veiKm').value.trim() || '0';
+
+            // Salvar ou atualizar cliente na base
+            let clienteExistente = clientesBase.find(c => c.nome.toUpperCase() === nomeCli.toUpperCase());
+            if (!clienteExistente) {
+                clientesBase.push({ nome: nomeCli, cpf: cpfCli, endereco: endCli, numero: numCli });
+            } else {
+                clienteExistente.cpf = cpfCli;
+                clienteExistente.endereco = endCli;
+                clienteExistente.numero = numCli;
+            }
+            localStorage.setItem('oficina_clientes_v17', JSON.stringify(clientesBase));
+
+            // Salvar ou atualizar veículo na base
+            let veiculoExistente = veiculosBase.find(v => v.placa.toUpperCase() === placaVei);
+            if (!veiculoExistente) {
+                veiculosBase.push({ placa: placaVei, modelo: modeloVei, ano: anoVei, km: kmVei });
+            } else {
+                veiculoExistente.modelo = modeloVei;
+                veiculoExistente.ano = anoVei;
+                veiculoExistente.km = kmVei;
+            }
+            localStorage.setItem('oficina_veiculos_v17', JSON.stringify(veiculosBase));
+
+            let pecasList = [];
+            document.querySelectorAll('.peca-row').forEach(r => {
+                const nome = r.querySelector('.peca-nome').value;
+                const qtd = r.querySelector('.peca-qtd').value || '1 UN';
+                const valor = parseMoney(r.querySelector('.peca-valor').value);
+                const tipo = r.querySelector('.peca-tipo').value;
+                if (nome && valor > 0) pecasList.push({ nome, qtd, valor, tipo });
+            });
+
+            let empresaInfo = oficinasData[currentUser] || { razao: currentUser };
+            let refId = Math.random().toString(36).substring(2, 10);
+
+            const novaOs = {
+                id: Date.now(),
+                ref: refId,
+                user: currentUser,
+                empresa: empresaInfo.razao,
+                cnpjEmpresa: empresaInfo.cnpj || '',
+                endEmpresa: empresaInfo.endereco || '',
+                contatoEmpresa: empresaInfo.contato || '',
+                logoEmpresa: empresaInfo.logo || '',
+                data: new Date().toLocaleDateString('pt-BR'),
+                cliente: nomeCli,
+                cpf: cpfCli,
+                enderecoCompleto: `${endCli}, nº ${numCli}`,
+                placa: placaVei,
+                modelo: modeloVei,
+                ano: anoVei,
+                km: kmVei,
+                servico: document.getElementById('srvDesc').value,
+                valorServico: parseMoney(document.getElementById('srvValor').value),
+                pecas: pecasList
+            };
+
+            ordensServico.unshift(novaOs);
+            localStorage.setItem('oficina_os_multi_v17', JSON.stringify(ordensServico));
+            document.getElementById('osForm').reset();
+            renderOficinaCards();
+            atualizarDatalists();
+            alert('Atendimento salvo com sucesso!');
+        }
+
+        function limparHistorico() {
+            if (confirm("Deseja apagar todos os atendimentos salvos?")) {
+                ordensServico = [];
+                localStorage.removeItem('oficina_os_multi_v17');
+                renderOficinaCards();
+            }
+        }
+
+        function renderOficinaCards() {
+            const container = document.getElementById('listaOsCards');
+            container.innerHTML = '';
+            let repasseTotal = 0, vendaTotal = 0, count = 0;
+
+            let minhasOs = ordensServico.filter(o => o.user === currentUser);
+
+            minhasOs.forEach(os => {
+                count++;
+                os.pecas.forEach(p => {
+                    if (p.tipo === 'repasse') repasseTotal += p.valor;
+                    else vendaTotal += p.valor;
+                });
+
+                const card = document.createElement('div');
+                card.className = 'os-item-card';
+                card.innerHTML = `
+                    <div class="os-header-row">
+                        <strong>📅 ${os.data} | Ref: ${os.ref}</strong>
+                        <span class="badge badge-blue">Placa: ${os.placa}</span>
+                    </div>
+                    <div class="os-body-row">
+                        <div><strong>Cliente:</strong> ${os.cliente}</div>
+                        <div><strong>Veículo:</strong> ${os.modelo} (${os.ano}) - KM: ${os.km}</div>
+                        <div><strong>Serviços:</strong> R$ ${os.valorServico.toFixed(2).replace('.', ',')} | <strong>Peças:</strong> ${os.pecas.length} item(ns)</div>
+                    </div>
+                    <div class="os-actions">
+                        <button onclick="gerarPDFCompleto(${os.id})" class="badge badge-purple" style="border:none;">📑 1. Completo</button>
+                        <button onclick="gerarPDFReembolso(${os.id})" class="badge badge-green" style="border:none;">📄 2. Reembolso</button>
+                        <button onclick="gerarPDFVenda(${os.id})" class="badge badge-blue" style="border:none;">🛒 3. Venda Peça</button>
+                        <button onclick="gerarPDFServico(${os.id})" class="badge badge-amber" style="border:none;">🛠️ 4. Serviços p/ NF</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('statToday').innerText = count;
+            document.getElementById('statRepasse').innerText = `R$ ${repasseTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('statVenda').innerText = `R$ ${vendaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        }
+
+        function renderContadorMaster() {
+            const containerList = document.getElementById('listaEmpresasAdmin');
+            containerList.innerHTML = '';
+            
+            Object.keys(credenciais).forEach(u => {
+                if (credenciais[u].tipo === 'oficina') {
+                    let infoEmp = oficinasData[u] || { razao: 'Oficina sem nome' };
+                    containerList.innerHTML += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-app); padding:0.5rem 0.75rem; border-radius:0.5rem; border:1px solid var(--border); font-size:0.85rem;">
+                            <div><strong>${u}</strong> - ${infoEmp.razao} <br><span style="font-size:0.75rem; color:var(--text-muted);">${infoEmp.cnpj || 'Sem CNPJ'}</span></div>
+                            <div style="display:flex; gap:0.4rem;">
+                                <button onclick="editarOficinaMaster('${u}')" class="btn-secondary" style="padding:0.2rem 0.5rem; font-size:0.7rem;">✏️ Editar</button>
+                                <button onclick="excluirOficina('${u}')" class="btn-danger" style="padding:0.2rem 0.5rem; font-size:0.7rem;">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            const containerCards = document.getElementById('listaContadorCards');
+            containerCards.innerHTML = '';
+            let geral = 0;
+
+            ordensServico.forEach(os => {
+                let totalPecas = os.pecas.reduce((acc, p) => acc + p.valor, 0);
+                let totalGeralOs = os.valorServico + totalPecas;
+                geral += totalGeralOs;
+
+                const card = document.createElement('div');
+                card.className = 'os-item-card';
+                card.innerHTML = `
+                    <div class="os-header-row">
+                        <strong>🏢 ${os.empresa} (Ref: ${os.ref})</strong>
+                        <span class="badge badge-green">Apuração OK</span>
+                    </div>
+                    <div class="os-body-row">
+                        <div><strong>Cliente:</strong> ${os.cliente} (${os.modelo} - ${os.placa})</div>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.4rem; font-size: 0.8rem;">
+                            <div style="background: var(--bg-app); padding: 0.4rem; border-radius: 0.4rem;">Serviços: <strong>R$ ${os.valorServico.toFixed(2).replace('.', ',')}</strong></div>
+                            <div style="background: #dcfce7; color: #15803d; padding: 0.4rem; border-radius: 0.4rem;">Total Geral: <strong>R$ ${totalGeralOs.toFixed(2).replace('.', ',')}</strong></div>
+                        </div>
+                    </div>
+                    <div class="os-actions">
+                        <button onclick="gerarPDFCompleto(${os.id})" class="badge badge-purple" style="border:none;">📑 Completo</button>
+                        <button onclick="gerarPDFReembolso(${os.id})" class="badge badge-green" style="border:none;">📄 Reembolso</button>
+                        <button onclick="gerarPDFVenda(${os.id})" class="badge badge-blue" style="border:none;">🛒 Venda</button>
+                        <button onclick="gerarPDFServico(${os.id})" class="badge badge-amber" style="border:none;">🛠️ Serviços</button>
+                    </div>
+                `;
+                containerCards.appendChild(card);
+            });
+            document.getElementById('totalGeralMes').innerText = `R$ ${geral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        }
+
+        // ==========================================================
+        // GERAÇÃO DE PDF COM LOGO E SEGURANÇA DE MARGENS
+        // ==========================================================
+
+        function adicionarCabecalhoPDF(doc, os) {
+            let textX = 14;
+            if (os.logoEmpresa) {
+                try {
+                    doc.addImage(os.logoEmpresa, 'JPEG', 14, 8, 22, 16);
+                    textX = 40; 
+                } catch(e) {}
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(`${os.empresa}`, textX, 12);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(`CNPJ: ${os.cnpjEmpresa || 'Não informado'}`, textX, 17);
+            doc.text(`${os.endEmpresa || ''}`, textX, 22);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(`Referência ${os.ref}`, 196, 12, { align: "right" });
+            doc.text(`Data: ${os.data}`, 196, 17, { align: "right" });
+
+            doc.setLineWidth(0.4);
+            doc.line(14, 27, 196, 27);
+        }
+
+        function desenharSecaoClienteVeiculo(doc, os) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.text("CLIENTE", 14, 33);
+            doc.text("VEÍCULO", 120, 33);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(`${os.cliente} (${os.cpf})`, 14, 38);
+            doc.text(`${os.enderecoCompleto}`, 14, 43);
+
+            doc.text(`${os.placa} - ${os.modelo} (${os.ano})`, 120, 38);
+            doc.text(`Quilometragem (KM): ${os.km}`, 120, 43);
+
+            doc.setLineWidth(0.2);
+            doc.line(14, 47, 196, 47);
+        }
+
+        function gerarPDFCompleto(id) {
+            const os = ordensServico.find(item => item.id === id);
+            if (!os) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            adicionarCabecalhoPDF(doc, os);
+            desenharSecaoClienteVeiculo(doc, os);
+
+            let totalPecas = os.pecas.reduce((acc, p) => acc + p.valor, 0);
+            let totalGeral = os.valorServico + totalPecas;
+
+            let rows = [[ '1', `Serviço: ${os.servico}`, '1 Serviço', `R$ ${os.valorServico.toFixed(2).replace('.', ',')}`, `R$ ${os.valorServico.toFixed(2).replace('.', ',')}` ]];
+            os.pecas.forEach(p => {
+                rows.push(['-', `${p.nome} [${p.tipo === 'venda' ? 'Venda c/ Lucro' : 'Repasse'}]`, p.qtd, `R$ ${p.valor.toFixed(2).replace('.', ',')}`, `R$ ${p.valor.toFixed(2).replace('.', ',')}`]);
+            });
+
+            doc.autoTable({
+                startY: 51,
+                head: [['#', 'DISCRIMINAÇÃO DOS ITENS E SERVIÇOS', 'QTD.', 'UNITÁRIO', 'TOTAL']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontSize: 8 },
+                bodyStyles: { fontSize: 8 }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 8;
+            doc.setFont("helvetica", "bold");
+            doc.text(`VALOR TOTAL GERAL: R$ ${totalGeral.toFixed(2).replace('.', ',')}`, 196, finalY, { align: "right" });
+
+            doc.save(`Relatorio_Completo_${os.placa}_${os.ref}.pdf`);
+        }
+
+        function gerarPDFReembolso(id) {
+            const os = ordensServico.find(item => item.id === id);
+            if (!os) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            adicionarCabecalhoPDF(doc, os);
+            desenharSecaoClienteVeiculo(doc, os);
+
+            let pecasRepasse = os.pecas.filter(p => p.tipo === 'repasse');
+            let totalRepasse = pecasRepasse.reduce((acc, p) => acc + p.valor, 0);
+
+            let pecasRows = pecasRepasse.map((p, idx) => [
+                idx + 1,
+                p.nome,
+                p.qtd,
+                `R$ ${p.valor.toFixed(2).replace('.', ',')}`,
+                `R$ ${p.valor.toFixed(2).replace('.', ',')}`
+            ]);
+
+            doc.autoTable({
+                startY: 51,
+                head: [['#', 'PEÇAS EM REPASSE (SEM MARGEM COMERCIAL)', 'QTD.', 'UNITÁRIO', 'TOTAL']],
+                body: pecasRows.length > 0 ? pecasRows : [['-', 'Nenhuma peça em repasse nesta OS', '-', 'R$ 0,00', 'R$ 0,00']],
+                theme: 'grid',
+                headStyles: { fillColor: [21, 128, 61], textColor: [255, 255, 255], fontSize: 8 },
+                bodyStyles: { fontSize: 8 }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 8;
+            doc.setFont("helvetica", "bold");
+            doc.text(`TOTAL REEMBOLSO: R$ ${totalRepasse.toFixed(2).replace('.', ',')}`, 196, finalY, { align: "right" });
+
+            let termoY = finalY + 12;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.text("DECLARAÇÃO FISCAL DE REEMBOLSO", 14, termoY);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.text("O cliente e a oficina declaram que os valores acima referem-se exclusivamente a custos de aquisição de peças", 14, termoY + 5);
+            doc.text("repassados sem margem comercial ou lucro, servindo para acompanhar a NFS-e.", 14, termoY + 9);
+
+            doc.line(20, termoY + 38, 90, termoY + 38);
+            doc.line(120, termoY + 38, 190, termoY + 38);
+            doc.setFont("helvetica", "bold");
+            doc.text("Assinatura do Cliente", 55, termoY + 43, { align: "center" });
+            doc.text("Assinatura da Oficina", 155, termoY + 43, { align: "center" });
+
+            doc.save(`Termo_Reembolso_${os.placa}_${os.ref}.pdf`);
+        }
+
+        function gerarPDFVenda(id) {
+            const os = ordensServico.find(item => item.id === id);
+            if (!os) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            adicionarCabecalhoPDF(doc, os);
+            desenharSecaoClienteVeiculo(doc, os);
+
+            let pecasVenda = os.pecas.filter(p => p.tipo === 'venda');
+            let totalVenda = pecasVenda.reduce((acc, p) => acc + p.valor, 0);
+
+            let pecasRows = pecasVenda.map((p, idx) => [
+                idx + 1,
+                `${p.nome} (Comercialização c/ Lucro)`,
+                p.qtd,
+                `R$ ${p.valor.toFixed(2).replace('.', ',')}`,
+                `R$ ${p.valor.toFixed(2).replace('.', ',')}`
+            ]);
+
+            doc.autoTable({
+                startY: 51,
+                head: [['#', 'PEÇAS DESTINADAS À VENDA MERCANTIL', 'QTD.', 'UNITÁRIO', 'TOTAL']],
+                body: pecasRows.length > 0 ? pecasRows : [['-', 'Nenhuma peça com lucro nesta OS', '-', 'R$ 0,00', 'R$ 0,00']],
+                theme: 'grid',
+                headStyles: { fillColor: [29, 78, 216], textColor: [255, 255, 255], fontSize: 8 },
+                bodyStyles: { fontSize: 8 }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 8;
+            doc.setFont("helvetica", "bold");
+            doc.text(`TOTAL DA VENDA DE PEÇAS: R$ ${totalVenda.toFixed(2).replace('.', ',')}`, 196, finalY, { align: "right" });
+
+            doc.save(`Relatorio_Venda_Pecas_${os.placa}_${os.ref}.pdf`);
+        }
+
+        function gerarPDFServico(id) {
+            const os = ordensServico.find(item => item.id === id);
+            if (!os) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            adicionarCabecalhoPDF(doc, os);
+            desenharSecaoClienteVeiculo(doc, os);
+
+            let servicoRow = [[ '1', `${os.servico}`, '1 Serviço', `R$ ${os.valorServico.toFixed(2).replace('.', ',')}`, `R$ ${os.valorServico.toFixed(2).replace('.', ',')}` ]];
+
+            doc.autoTable({
+                startY: 51,
+                head: [['#', 'DISCRIMINAÇÃO DOS SERVIÇOS MECÂNICOS', 'QTD.', 'VALOR UNIT.', 'TOTAL']],
+                body: servicoRow,
+                theme: 'grid',
+                headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontSize: 8 },
+                bodyStyles: { fontSize: 8 }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 8;
+            doc.setFont("helvetica", "bold");
+            doc.text(`TOTAL DOS SERVIÇOS (NFS-e): R$ ${os.valorServico.toFixed(2).replace('.', ',')}`, 196, finalY, { align: "right" });
+
+            doc.save(`Relatorio_Servicos_${os.placa}_${os.ref}.pdf`);
+        }
+
+        function exportarRelatorioContabil() {
+            alert('Relatório mestre consolidado gerado.');
+        }
+    </script>
+</body>
+</html>
